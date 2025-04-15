@@ -3,13 +3,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDJjlFiJbSJMJFumYS0PY5URx_sCB5YjfE",
-  authDomain: "museum-reservation-default.firebaseapp.com",
-  databaseURL: "https://museum-reservation-default-rtdb.firebaseio.com",
+  apiKey: "AIzaSyDGJYEeeDFemavCBnwh2AZZ2VlgQVrsx48",
   projectId: "museum-reservation",
+  messagingSenderId: "254193649769",
+  authDomain: "museum-reservation.firebaseapp.com",
   storageBucket: "museum-reservation.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:1234567890abcdef"
+  appId: "1:254193649769:web:a1b2c3d4e5f6g7h8i9j0k1"
 };
 
 // Initialize Firebase

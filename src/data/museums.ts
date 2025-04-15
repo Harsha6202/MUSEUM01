@@ -31,7 +31,7 @@ export const museums: Museum[] = [
   },
   {
     id: '2',
-    name: 'Chhatrapati Shivaji Maharaj Vastu Sangrahalaya',
+    name: 'Chatrapati Shivaji Maharaj Vastu Sangrahalaya',
     description: 'Former Prince of Wales Museum showcasing Indian history and culture.',
     location: 'Mumbai',
     state: 'Maharashtra',
@@ -92,7 +92,7 @@ export const museums: Museum[] = [
     location: 'Hyderabad',
     state: 'Telangana',
     basePrice: 65,
-    imageUrl: 'https://images.unsplash.com/photo-1584037618503-6140c67e9edc',
+    imageUrl: 'https://images.unsplash.com/photo-1491156855053-9cdff72c7f85?q=80&w=2128&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     openingHours: '10:00 AM - 5:00 PM',
     capacity: 350,
     currentVisitors: 0,

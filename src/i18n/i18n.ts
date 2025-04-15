@@ -7,6 +7,84 @@ import teTranslations from './translations/te.json';
 import mrTranslations from './translations/mr.json';
 
 const enTranslations = {
+  timings: {
+    title: "Museum Timings & Information",
+    subtitle: "Plan your visit to India's most prestigious museums",
+    importantNotice: "Important Notice",
+    holidayNotice: "Closed on national holidays. Special exhibitions may have different timings.",
+    entryFees: "Entry Fees"
+  },
+  about: {
+    title: "About Indian Museums",
+    subtitle: "Preserving and showcasing India's rich cultural heritage through our network of prestigious museums.",
+    mission: {
+      title: "Our Mission",
+      description: "To preserve, protect, and promote India's cultural heritage by maintaining world-class museums that educate and inspire visitors from around the globe. We strive to make our collections accessible to everyone while ensuring their preservation for future generations."
+    },
+    vision: {
+      title: "Our Vision",
+      description: "To be the leading cultural institution in Asia, recognized globally for excellence in preservation, education, and presentation of India's rich historical and cultural heritage, while embracing modern technology and innovative practices."
+    },
+    features: {
+      title: "What Sets Us Apart",
+      history: {
+        title: "Rich History",
+        description: "Over 100 years of experience in preserving India's cultural heritage"
+      },
+      curators: {
+        title: "Expert Curators",
+        description: "Dedicated team of experienced curators and historians"
+      },
+      awards: {
+        title: "Award Winning",
+        description: "Recognized globally for excellence in museum management"
+      },
+      facilities: {
+        title: "Modern Facilities",
+        description: "State-of-the-art conservation and display facilities"
+      }
+    },
+    stats: {
+      visitors: "Annual Visitors",
+      artifacts: "Artifacts",
+      staff: "Expert Staff",
+      years: "Years of Excellence"
+    },
+    team: {
+      title: "Our Leadership Team"
+    }
+  },
+  contact: {
+    title: "Contact Us",
+    subtitle: "Get in touch with us for any queries or assistance",
+    info: {
+      title: "Contact Information",
+      address: {
+        title: "Address"
+      },
+      phone: {
+        title: "Phone",
+        tollFree: "Toll Free"
+      },
+      email: {
+        title: "Email"
+      },
+      hours: {
+        title: "Working Hours",
+        weekdays: "Monday - Friday: 9:00 AM - 5:00 PM",
+        weekends: "Saturday - Sunday: 10:00 AM - 2:00 PM"
+      }
+    },
+    form: {
+      title: "Send us a Message",
+      name: "Name",
+      email: "Email",
+      subject: "Subject",
+      message: "Message",
+      send: "Send Message",
+      sent: "Message Sent!"
+    }
+  },
   chatbot: {
     title: "Museum Booking Assistant",
     typing: "Assistant is typing...",
@@ -20,6 +98,35 @@ const enTranslations = {
       info: "Museum information",
       contact: "Contact support",
       faq: "FAQ"
+    },
+    conversation: {
+      greeting: "Hello! I'm your museum booking assistant. I can help you book tickets, check museum timings, or answer any questions you have.",
+      nameAsk: "To get started, may I know your name?",
+      nameConfirm: "Nice to meet you, {{name}}! How can I assist you today?",
+      emailAsk: "Could you please share your email address for the booking confirmation?",
+      emailConfirm: "Thank you! I'll send the booking confirmation to {{email}}.",
+      phoneAsk: "Could I have your phone number for important updates about your visit?",
+      phoneConfirm: "Perfect! I'll send any important updates to {{phone}}.",
+      museumSelect: "Which museum would you like to visit? I can help you choose based on your interests.",
+      dateAsk: "When would you like to visit? I can show you available dates and peak times.",
+      visitorAsk: "How many visitors will be joining? We have special rates for children and seniors.",
+      confirmBooking: "Great! I've got all the details. Would you like to proceed with the booking?",
+      paymentPrompt: "Please select your preferred payment method to complete the booking.",
+      bookingSuccess: "Wonderful! Your booking is confirmed. I've sent the details to your email.",
+      helpOffer: "Is there anything else you'd like to know about your visit?"
+    },
+    errors: {
+      invalidName: "I didn't quite catch that. Could you please provide your full name?",
+      invalidEmail: "That email address doesn't look quite right. Could you please check and try again?",
+      invalidPhone: "I need a valid phone number to proceed. Please provide a number with country code.",
+      bookingFailed: "I apologize, but I couldn't complete the booking. Shall we try again?"
+    },
+    buttons: {
+      start: "Start Booking",
+      continue: "Continue",
+      modify: "Modify Details",
+      confirm: "Confirm",
+      cancel: "Cancel"
     }
   },
   welcome: "Hello! Welcome to the Museum Ticket Booking Assistant. How can I help you today?",
@@ -144,14 +251,15 @@ i18n
         translation: mrTranslations
       }
     },
-    lng: 'en',
+    lng: localStorage.getItem('museum-reservation_language') || 'en',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
     },
     detection: {
       order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
+      caches: ['localStorage'],
+      lookupLocalStorage: 'museum-reservation_language'
     }
   });
 

@@ -1,23 +1,22 @@
 import { db } from './config';
 import { 
   collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
+  addDoc,
+  getDocs,
+  query,
+  where,
   Timestamp,
   updateDoc,
   doc,
-  getDoc,
   deleteDoc,
   orderBy,
-  limit
+  limit,
+  onSnapshot
 } from 'firebase/firestore';
 import { BookingDetails, Museum, TimeSlot } from '../types';
 
-// Collection references
+// Collection reference
 const bookingsCollection = collection(db, 'bookings');
-const museumsCollection = collection(db, 'museums');
 
 // Add a new booking
 export const addBooking = async (booking: BookingDetails) => {
@@ -31,6 +30,34 @@ export const addBooking = async (booking: BookingDetails) => {
     console.error("Error adding booking: ", error);
     throw error;
   }
+};
+
+// Set up real-time listener for all bookings
+export const setupBookingsListener = (callback: (bookings: BookingDetails[]) => void) => {
+  return onSnapshot(
+    query(bookingsCollection, orderBy('createdAt', 'desc')),
+    (snapshot) => {
+      const bookings = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as BookingDetails[];
+      callback(bookings);
+    }
+  );
+};
+
+// Set up real-time listener for date-specific bookings
+export const setupDateBookingsListener = (date: string, callback: (bookings: BookingDetails[]) => void) => {
+  return onSnapshot(
+    query(bookingsCollection, where("date", "==", date)),
+    (snapshot) => {
+      const bookings = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as BookingDetails[];
+      callback(bookings);
+    }
+  );
 };
 
 // Get all bookings
@@ -135,13 +162,13 @@ export const getAvailableTimeSlots = async (date: string, museum: Museum): Promi
 };
 
 // Get recent bookings for admin dashboard
-export const getRecentBookings = async (limit: number = 10) => {
+export const getRecentBookings = async (limitCount: number = 10) => {
   try {
     const querySnapshot = await getDocs(
       query(
         bookingsCollection, 
         orderBy('createdAt', 'desc'),
-        limit(limit)
+        limit(limitCount)
       )
     );
     return querySnapshot.docs.map(doc => ({
@@ -155,34 +182,34 @@ export const getRecentBookings = async (limit: number = 10) => {
 };
 
 // Get booking statistics for admin dashboard
-export const getBookingStats = async () => {
-  try {
-    const allBookings = await getAllBookings();
+export const setupBookingStatsListener = (callback: (stats: {
+  totalBookings: number;
+  totalRevenue: number;
+  todayBookings: number;
+  todayRevenue: number;
+}) => void) => {
+  return onSnapshot(bookingsCollection, (snapshot) => {
+    const bookings = snapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id
+    })) as BookingDetails[];
     
-    // Calculate total revenue
-    const totalRevenue = allBookings.reduce((sum, booking) => sum + booking.totalAmount, 0);
-    
-    // Get today's bookings
     const today = new Date().toISOString().split('T')[0];
-    const todayBookings = allBookings.filter(booking => booking.date === today);
-    const todayRevenue = todayBookings.reduce((sum, booking) => sum + booking.totalAmount, 0);
+    const todayBookings = bookings.filter(booking => booking.date === today);
     
-    return {
-      totalBookings: allBookings.length,
-      totalRevenue,
+    callback({
+      totalBookings: bookings.length,
+      totalRevenue: bookings.reduce((sum, booking) => sum + booking.totalAmount, 0),
       todayBookings: todayBookings.length,
-      todayRevenue
-    };
-  } catch (error) {
-    console.error("Error getting booking stats: ", error);
-    throw error;
-  }
+      todayRevenue: todayBookings.reduce((sum, booking) => sum + booking.totalAmount, 0)
+    });
+  });
 };
 
 // Update a booking
 export const updateBooking = async (id: string, data: Partial<BookingDetails>) => {
   try {
-    const bookingRef = doc(db, 'bookings', id);
+    const bookingRef = doc(bookingsCollection, id);
     await updateDoc(bookingRef, data);
     return { id, ...data };
   } catch (error) {
@@ -194,7 +221,7 @@ export const updateBooking = async (id: string, data: Partial<BookingDetails>) =
 // Delete a booking
 export const deleteBooking = async (id: string) => {
   try {
-    const bookingRef = doc(db, 'bookings', id);
+    const bookingRef = doc(bookingsCollection, id);
     await deleteDoc(bookingRef);
     return id;
   } catch (error) {

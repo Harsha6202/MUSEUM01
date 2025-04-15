@@ -18,12 +18,12 @@ const LanguageSelector: React.FC = () => {
 
   const handleLanguageChange = (languageCode: string) => {
     i18n.changeLanguage(languageCode);
-    localStorage.setItem('preferredLanguage', languageCode);
+    localStorage.setItem('museum-reservation_language', languageCode);
     setIsOpen(false);
   };
 
   React.useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferredLanguage');
+    const savedLanguage = localStorage.getItem('museum-reservation_language');
     if (savedLanguage) {
       i18n.changeLanguage(savedLanguage);
     }

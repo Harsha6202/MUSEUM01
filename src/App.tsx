@@ -11,8 +11,33 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
-  return isAuthenticated ? <>{children}</> : <Navigate to="/admin-login" />;
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const verifySession = () => {
+      try {
+        const sessionTime = parseInt(sessionStorage.getItem('adminSession') || '0');
+        const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true' && 
+          Date.now() - sessionTime < 3600000; // 1 hour session
+        setIsValidSession(isAuthenticated);
+      } catch (error) {
+        console.error('Session verification error:', error);
+        setIsValidSession(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    verifySession();
+  }, []);
+
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+
+  return isValidSession ? (
+    <ErrorBoundary fallback={<div className="p-4 text-red-600">Dashboard Error - Please reload</div>}>
+      {children}
+    </ErrorBoundary>
+  ) : <Navigate to="/admin-login" />;
 };
 
 function App() {

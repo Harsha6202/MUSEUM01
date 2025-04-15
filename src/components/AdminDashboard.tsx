@@ -1,74 +1,197 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookingDetails, AdminStats } from '../types';
-import { 
-  IndianRupee, 
-  Ticket, 
-  Users, 
+import {
+  IndianRupee,
+  Ticket,
+  Users,
   Calendar,
   Search,
   Download,
   Filter,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from 'lucide-react';
-import { getAllBookings, getBookingStats } from '../utils/bookingService';
+import { setupBookingsListener } from '../firebase/bookings';
+import { getBookingStats, getAllBookings } from '../utils/bookingService';
 import { format } from 'date-fns';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
   const [bookings, setBookings] = useState<BookingDetails[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalBookings: 0,
+    totalVisitors: 0,
     totalRevenue: 0,
     todayBookings: 0,
     todayRevenue: 0,
     visitorMetrics: { daily: 0, weekly: 0, monthly: 0 },
     peakTimes: [],
-    popularMuseums: []
+    popularMuseums: [],
+    monthlyTrend: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Auth check
   useEffect(() => {
-    fetchData();
+    const isAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+    if (!isAuthenticated) {
+      navigate('/admin/login');
+    }
+  }, [navigate]);
+
+  // Data loading
+  useEffect(() => {
+    // Try to load from localStorage first for immediate display
+    const cachedBookings = localStorage.getItem('adminBookings');
+    if (cachedBookings) {
+      try {
+        const parsedBookings = JSON.parse(cachedBookings);
+        if (Array.isArray(parsedBookings)) {
+          setBookings(parsedBookings);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error parsing cached bookings:", err);
+      }
+    }
+
+    // Fetch fresh data
+    const fetchInitialData = async () => {
+      try {
+        console.log("Fetching initial booking data...");
+        const bookingsData = await getAllBookings();
+        if (Array.isArray(bookingsData)) {
+          setBookings(bookingsData);
+          localStorage.setItem('adminBookings', JSON.stringify(bookingsData));
+        }
+      } catch (err) {
+        console.error("Error fetching initial booking data:", err);
+        // Continue with cached data if available
+      }
+    };
+    
+    fetchInitialData();
+
+    // Set up real-time listener
+    const unsubscribe = setupBookingsListener((bookingsData) => {
+      try {
+        console.log("Real-time booking update received");
+        if (bookingsData && Array.isArray(bookingsData)) {
+          setBookings(bookingsData);
+          localStorage.setItem('adminBookings', JSON.stringify(bookingsData));
+          setLoading(false);
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Error processing bookings data:", err);
+        setError("Error updating live data");
+      }
+    }, (error) => {
+      console.error("Error in bookings listener:", error);
+      setError("Failed to connect to live data service");
+      setLoading(false);
+    });
+
+    // Fetch stats separately
+    const fetchStats = async () => {
+      try {
+        console.log("Fetching booking statistics...");
+        const statsData = await getBookingStats();
+        if (statsData && typeof statsData.totalBookings === 'number') {
+          setStats(statsData);
+        }
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+        // Don't set error state here to prioritize bookings display
+      } finally {
+        // Ensure loading state is completed
+        setLoading(false);
+      }
+    };
+    
+    fetchStats();
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch bookings
+      // Fetch bookings data
       const bookingsData = await getAllBookings();
-      setBookings(bookingsData);
+      if (Array.isArray(bookingsData)) {
+        setBookings(bookingsData);
+        localStorage.setItem('adminBookings', JSON.stringify(bookingsData));
+      } else {
+        throw new Error("Invalid bookings data format");
+      }
       
       // Fetch stats
       const statsData = await getBookingStats();
-      setStats({
-        ...stats,
-        totalBookings: statsData.totalBookings,
-        totalRevenue: statsData.totalRevenue,
-        todayBookings: statsData.todayBookings,
-        todayRevenue: statsData.todayRevenue
-      });
+      if (statsData && typeof statsData.totalBookings === 'number') {
+        setStats({
+          totalBookings: statsData.totalBookings || 0,
+          totalVisitors: statsData.totalVisitors || 0,
+          totalRevenue: statsData.totalRevenue || 0,
+          monthlyTrend: statsData.monthlyTrend || []
+        });
+      } else {
+        console.warn("Invalid stats data format");
+        setStats({
+          totalBookings: 0,
+          totalVisitors: 0,
+          totalRevenue: 0,
+          monthlyTrend: []
+        });
+      }
       
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching admin data:", err);
-      setError("Failed to load data. Please try again.");
+      
+      // Try to use cached data
+      const cachedBookings = localStorage.getItem('adminBookings');
+      if (cachedBookings) {
+        try {
+          setBookings(JSON.parse(cachedBookings));
+          setError("Using cached data. Live data unavailable.");
+        } catch (parseErr) {
+          console.error("Error parsing cached data:", parseErr);
+          setError("Failed to load data. Please try again.");
+        }
+      } else {
+        setError("Failed to load data. Please try again.");
+      }
+    } finally {
       setLoading(false);
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuthenticated');
+    sessionStorage.removeItem('adminSession');
+    navigate('/admin/login');
+  };
+
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      booking.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.ticketNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'all' || 
+    const matchesSearch =
+      (booking.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (booking.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (booking.ticketNumber?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filterStatus === 'all' ||
       booking.paymentStatus === filterStatus;
 
     return matchesSearch && matchesFilter;
@@ -93,26 +216,37 @@ export default function AdminDashboard() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'bookings.csv';
+    a.download = `bookings-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <button 
-            onClick={fetchData}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh Data
-          </button>
+          <h1 className="text-xl md:text-2xl font-bold">Admin Dashboard</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={fetchData}
+              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 bg-gray-200 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors text-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 bg-white rounded-lg shadow-sm">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
             <p>Loading dashboard data...</p>
           </div>
@@ -122,7 +256,7 @@ export default function AdminDashboard() {
             <div>
               <p className="font-medium">Error loading data</p>
               <p className="text-sm">{error}</p>
-              <button 
+              <button
                 onClick={fetchData}
                 className="mt-2 text-sm text-red-700 underline hover:text-red-800"
               >
@@ -133,21 +267,21 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-sm">Total Bookings</p>
-                    <p className="text-2xl font-bold">{stats.totalBookings}</p>
+                    <p className="text-xl md:text-2xl font-bold">{stats.totalBookings}</p>
                   </div>
                   <Ticket className="w-8 h-8 text-blue-500" />
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-sm">Total Revenue</p>
-                    <p className="text-2xl font-bold flex items-center">
+                    <p className="text-xl md:text-2xl font-bold flex items-center">
                       <IndianRupee className="w-5 h-5" />
                       {stats.totalRevenue}
                     </p>
@@ -155,20 +289,20 @@ export default function AdminDashboard() {
                   <Users className="w-8 h-8 text-green-500" />
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-sm">Today's Bookings</p>
-                    <p className="text-2xl font-bold">{stats.todayBookings}</p>
+                    <p className="text-xl md:text-2xl font-bold">{stats.todayBookings}</p>
                   </div>
                   <Calendar className="w-8 h-8 text-purple-500" />
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-500 text-sm">Today's Revenue</p>
-                    <p className="text-2xl font-bold flex items-center">
+                    <p className="text-xl md:text-2xl font-bold flex items-center">
                       <IndianRupee className="w-5 h-5" />
                       {stats.todayRevenue}
                     </p>
@@ -179,7 +313,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm mb-6">
               <div className="flex flex-col md:flex-row gap-4 justify-between">
                 <div className="flex-1">
                   <div className="relative">
@@ -193,11 +327,11 @@ export default function AdminDashboard() {
                     />
                   </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-2 md:gap-4">
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value as any)}
-                    className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">All Status</option>
                     <option value="completed">Completed</option>
@@ -205,10 +339,10 @@ export default function AdminDashboard() {
                   </select>
                   <button
                     onClick={exportData}
-                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
                   >
-                    <Download className="w-5 h-5" />
-                    Export CSV
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export CSV</span>
                   </button>
                 </div>
               </div>
@@ -221,8 +355,8 @@ export default function AdminDashboard() {
                   <Ticket className="w-12 h-12 mx-auto text-gray-300 mb-2" />
                   <p className="text-lg font-medium mb-1">No bookings found</p>
                   <p className="text-sm">
-                    {searchTerm || filterStatus !== 'all' 
-                      ? "Try adjusting your search or filter criteria" 
+                    {searchTerm || filterStatus !== 'all'
+                      ? "Try adjusting your search or filter criteria"
                       : "There are no bookings in the system yet"}
                   </p>
                 </div>
@@ -231,57 +365,61 @@ export default function AdminDashboard() {
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Ticket Details
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Museum
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date & Time
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Amount
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredBookings.map((booking) => (
-                        <tr key={booking.id}>
-                          <td className="px-6 py-4">
+                        <tr key={booking.id || booking.ticketNumber}>
+                          <td className="px-4 md:px-6 py-4">
                             <div>
                               <p className="font-medium text-gray-900">{booking.ticketNumber}</p>
                               <p className="text-sm text-gray-500">{booking.name}</p>
                               <p className="text-sm text-gray-500">{booking.email}</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 md:px-6 py-4">
                             <div>
                               <p className="text-gray-900">{booking.museum?.name}</p>
                               <p className="text-sm text-gray-500">{booking.museum?.location}</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 md:px-6 py-4">
                             <div>
                               <p className="text-gray-900">{booking.date}</p>
                               <p className="text-sm text-gray-500">{booking.time}</p>
                               {booking.createdAt && (
                                 <p className="text-xs text-gray-400">
-                                  Booked: {format(new Date(booking.createdAt), 'MMM d, yyyy')}
+                                  Booked: {
+                                    typeof booking.createdAt === 'string' 
+                                      ? format(new Date(booking.createdAt), 'MMM d, yyyy')
+                                      : format(booking.createdAt, 'MMM d, yyyy')
+                                  }
                                 </p>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 md:px-6 py-4">
                             <div className="flex items-center text-gray-900">
                               <IndianRupee className="w-4 h-4 mr-1" />
                               {booking.totalAmount}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 md:px-6 py-4">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 booking.paymentStatus === 'completed'

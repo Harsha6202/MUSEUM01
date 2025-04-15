@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ContactPage = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,26 +35,20 @@ const ContactPage = () => {
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-          <p className="text-lg text-gray-600">
-            Get in touch with us for any queries or assistance
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('contact.title')}</h1>
+          <p className="text-lg text-gray-600">{t('contact.subtitle')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <div className="bg-white rounded-lg shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Contact Information
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('contact.info.title')}</h2>
 
               <div className="space-y-6">
                 <div className="flex items-start">
                   <MapPin className="h-6 w-6 text-blue-600 mt-1" />
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Address
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{t('contact.info.address.title')}</h3>
                     <p className="text-gray-600">
                       Yelhanka
                       <br />
@@ -66,20 +62,16 @@ const ContactPage = () => {
                 <div className="flex items-start">
                   <Phone className="h-6 w-6 text-blue-600 mt-1" />
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Phone
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{t('contact.info.phone.title')}</h3>
                     <p className="text-gray-600">+91 8639549633</p>
-                    <p className="text-gray-600">Toll Free: 8888888888</p>
+                    <p className="text-gray-600">{t('contact.info.phone.tollFree')}: 8888888888</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <Mail className="h-6 w-6 text-blue-600 mt-1" />
                   <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Email
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{t('contact.info.email.title')}</h3>
                     <p className="text-gray-600">info@indianmuseums.gov.in</p>
                     <p className="text-gray-600">
                       support@indianmuseums.gov.in
@@ -89,12 +81,10 @@ const ContactPage = () => {
               </div>
 
               <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Working Hours
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('contact.info.hours.title')}</h3>
                 <div className="space-y-2 text-gray-600">
-                  <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
-                  <p>Saturday - Sunday: 10:00 AM - 2:00 PM</p>
+                  <p>{t('contact.info.hours.weekdays')}</p>
+                  <p>{t('contact.info.hours.weekends')}</p>
                 </div>
               </div>
             </div>
@@ -102,9 +92,7 @@ const ContactPage = () => {
 
           <div>
             <div className="bg-white rounded-lg shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Send us a Message
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('contact.form.title')}</h2>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
@@ -112,7 +100,7 @@ const ContactPage = () => {
                     htmlFor="name"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Name
+                    {t('contact.form.name')}
                   </label>
                   <input
                     type="text"
@@ -130,7 +118,7 @@ const ContactPage = () => {
                     htmlFor="email"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Email
+                    {t('contact.form.email')}
                   </label>
                   <input
                     type="email"
@@ -148,7 +136,7 @@ const ContactPage = () => {
                     htmlFor="subject"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Subject
+                    {t('contact.form.subject')}
                   </label>
                   <input
                     type="text"
@@ -166,7 +154,7 @@ const ContactPage = () => {
                     htmlFor="message"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Message
+                    {t('contact.form.message')}
                   </label>
                   <textarea
                     id="message"
@@ -186,12 +174,12 @@ const ContactPage = () => {
                   {isSubmitted ? (
                     <>
                       <CheckCircle className="h-5 w-5 mr-2" />
-                      Message Sent!
+                      {t('contact.form.sent')}
                     </>
                   ) : (
                     <>
                       <Send className="h-5 w-5 mr-2" />
-                      Send Message
+                      {t('contact.form.send')}
                     </>
                   )}
                 </button>

@@ -21,7 +21,7 @@ const HomePage = () => {
       <div 
         className="relative bg-cover bg-center h-[600px]" 
         style={{ 
-          backgroundImage: 'url(https://images.unsplash.com/photo-1566552881560-0be862a7c445?auto=format&fit=crop&w=2000)'
+          backgroundImage: 'url(https://media.istockphoto.com/id/466240080/photo/victoria-memorial-landmark-in-calcutta-india.jpg?s=612x612&w=0&k=20&c=908J0rxwTyUBivotass3lCizKrsE5gGYQ5UpHP3V6zY=)'
         }}
       >
         <div className="absolute inset-0 bg-black bg-opacity-50" />

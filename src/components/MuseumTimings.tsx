@@ -1,15 +1,18 @@
 import React from 'react';
 import { Clock, MapPin, Phone, Globe, AlertCircle } from 'lucide-react';
 import { museums } from '../data/museums';
+import { useTranslation } from 'react-i18next';
 
 const MuseumTimings = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Museum Timings & Information</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('timings.title')}</h1>
           <p className="text-lg text-gray-600">
-            Plan your visit to India's most prestigious museums
+            {t('timings.subtitle')}
           </p>
         </div>
 
@@ -53,31 +56,31 @@ const MuseumTimings = () => {
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
                     <div>
-                      <h3 className="font-semibold text-blue-900">Important Notice</h3>
+                      <h3 className="font-semibold text-blue-900">{t('timings.importantNotice')}</h3>
                       <p className="text-sm text-blue-800">
-                        Closed on national holidays. Special exhibitions may have different timings.
+                        {t('timings.holidayNotice')}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">Entry Fees</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">{t('timings.entryFees')}</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-sm">
-                      <p className="text-gray-600">Adults</p>
+                      <p className="text-gray-600">{t('ageGroups.adult')}</p>
                       <p className="font-semibold">₹{museum.pricing.adult}</p>
                     </div>
                     <div className="text-sm">
-                      <p className="text-gray-600">Children</p>
+                      <p className="text-gray-600">{t('ageGroups.child')}</p>
                       <p className="font-semibold">₹{museum.pricing.child}</p>
                     </div>
                     <div className="text-sm">
-                      <p className="text-gray-600">Senior Citizens</p>
+                      <p className="text-gray-600">{t('ageGroups.senior')}</p>
                       <p className="font-semibold">₹{museum.pricing.senior}</p>
                     </div>
                     <div className="text-sm">
-                      <p className="text-gray-600">Foreign Tourists</p>
+                      <p className="text-gray-600">{t('ageGroups.tourist')}</p>
                       <p className="font-semibold">₹{museum.pricing.tourist}</p>
                     </div>
                   </div>

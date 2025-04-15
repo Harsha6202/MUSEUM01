@@ -67,6 +67,20 @@ export interface BookingDetails {
   audioGuide?: boolean;
 }
 
+export interface AdminStats {
+  totalBookings: number;
+  totalRevenue: number;
+  todayBookings: number;
+  todayRevenue: number;
+  visitorMetrics: {
+    daily: number;
+    weekly: number;
+    monthly: number;
+  };
+  peakTimes: string[];
+  popularMuseums: Array<{ name: string; bookings: number }>;
+}
+
 export interface TimeSlot {
   time: string;
   available: number;

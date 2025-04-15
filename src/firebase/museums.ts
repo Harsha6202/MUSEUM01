@@ -7,7 +7,8 @@ import {
   setDoc,
   updateDoc,
   query,
-  where
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 import { Museum } from '../types';
 import { museums as initialMuseums } from '../data/museums';
@@ -15,13 +16,12 @@ import { museums as initialMuseums } from '../data/museums';
 // Collection reference
 const museumsCollection = collection(db, 'museums');
 
-// Initialize museums in Firestore if they don't exist
+// Initialize museums in Firestore
 export const initializeMuseums = async () => {
   try {
     const snapshot = await getDocs(museumsCollection);
     
     if (snapshot.empty) {
-      // If no museums exist, add the initial data
       const promises = initialMuseums.map(museum => 
         setDoc(doc(museumsCollection, museum.id), museum)
       );
@@ -34,6 +34,17 @@ export const initializeMuseums = async () => {
   }
 };
 
+// Set up real-time listener for museums using Firestore
+export const setupMuseumsListener = (callback: (museums: Museum[]) => void) => {
+  return onSnapshot(museumsCollection, (snapshot) => {
+    const museums = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Museum[];
+    callback(museums);
+  });
+};
+
 // Get all museums
 export const getAllMuseums = async (): Promise<Museum[]> => {
   try {
@@ -44,7 +55,6 @@ export const getAllMuseums = async (): Promise<Museum[]> => {
     })) as Museum[];
   } catch (error) {
     console.error("Error getting museums: ", error);
-    // Fallback to local data if Firebase fails
     return initialMuseums;
   }
 };
@@ -61,7 +71,6 @@ export const getMuseumById = async (id: string): Promise<Museum | null> => {
     }
   } catch (error) {
     console.error("Error getting museum: ", error);
-    // Fallback to local data if Firebase fails
     return initialMuseums.find(m => m.id === id) || null;
   }
 };
@@ -78,12 +87,11 @@ export const getMuseumsByState = async (state: string): Promise<Museum[]> => {
     })) as Museum[];
   } catch (error) {
     console.error("Error getting museums by state: ", error);
-    // Fallback to local data if Firebase fails
     return initialMuseums.filter(m => m.state === state);
   }
 };
 
-// Update museum capacity or other details
+// Update museum
 export const updateMuseum = async (id: string, data: Partial<Museum>): Promise<void> => {
   try {
     const museumRef = doc(museumsCollection, id);
